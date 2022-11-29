@@ -162,33 +162,34 @@ def main():
         for t in threads:
             t.join()
 
-            time.sleep(0.5)
-            tprint('Task Completed')
-            tprint('Created all Threads\n')
+        time.sleep(0.5)
+        tprint('Task Completed')
+        tprint('Created all Threads\n')
 
-            # proceed
-            set_title("Youtube Playlist Downloader || Proceeding")
-            tprint(f"Number of songs that are going to be downloaded: {sum(check)}")
+        # proceed
+        set_title("Youtube Playlist Downloader || Proceeding")
+        tprint(f"Number of songs that are going to be downloaded: {sum(check)}")
 
-            proceed = input("Are you sure you want to download the songs (n/y)? ").lower()
-            tprint()
+        proceed = input("Are you sure you want to download the songs (y/n)? ").lower()
+        tprint()
 
-            if proceed == "n" or proceed == "":
-                startTime = time.perf_counter()
+        if proceed == "y" or proceed == "":
+            startTime = time.perf_counter()
 
-                for i, youtube in enumerate(youtubes):
-                    set_title(f"Youtube Playlist Downloader || Downloading ({i}/{sum(check)})")
-                    tprint(f"Downloading | {youtube.title}")
+            for i, youtube in enumerate(youtubes):
+                set_title(f"Youtube Playlist Downloader || Downloaded ({i}/{sum(check)})")
+                tprint(f"Downloading | {youtube.title}")
 
-                    download_video(youtube)
+                download_video(youtube)
 
-                endTime = time.perf_counter()
+            endTime = time.perf_counter()
 
-                tprint("\nDone!")
-                tprint(f"It took {(endTime - startTime):.2f}s to download all {sum(check)} songs!")
+            tprint("\nDone!")
+            tprint(f"It took {(endTime - startTime):.2f}s to download all {sum(check)} songs!")
 
-            set_title("Youtube Playlist Downloader")
-            stay()
+        set_title("Youtube Playlist Downloader")
+
+        stay()
 
 
 if __name__ == '__main__':
