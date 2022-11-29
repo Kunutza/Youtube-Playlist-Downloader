@@ -1,5 +1,7 @@
 # Youtube-Playlist-Downloader
-This is a script to download all the audio of every video in a youtube playlist. It was made in one day so it does not have documentation
+This is a script to download all the audio of every video in a youtube playlist. 
+
+It was made in one day so it does not have documentation
 
 Only the main.py file contains code writen by me. All the other files where automatically created be pyinstaller.
 
