@@ -10,3 +10,5 @@ Suggesting changes in the multithreading part of the code would be greatly appre
 # TODO 
 - If you insert invalid link loading shows once after the prompt
 - Implement documentation
+- give choice about the quality of the audio that is going to be downloaded
+- print out the size of the download for each audio quality
