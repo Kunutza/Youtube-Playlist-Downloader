@@ -15,5 +15,6 @@ Suggesting changes in the multithreading part of the code would be greatly appre
 - get rid of global variables 
 
 ## Late TODO
+- pytybe finds only 720 30-24fps, 360 30-24fps || 128, 48 abr
 - make gui
 - break down main.py in multiple files
