@@ -1,20 +1,22 @@
 # Youtube-Playlist-Downloader
 This is a script to download all the audio of every video in a youtube playlist. 
 
-It was made in one day so it does not have documentation
-
 Feel free to suggest changes in the code. 
 
-Suggesting changes in the multithreading part of the code would be greatly appreciated as this script was writen so I could practice and get to better understand just that.
+This project was initially made to practice multithreading. You can borrow all the code you want
+
+## Version 1.1
+- Finds video streams using multithread
+- Downloads the best quality of audio automatically
+- Prints out the size of the download before proceeding
 
 # TODO 
-- starts anyway no matter what the prompt is
+- ask to download video or audio
+- starts anyway no matter what the prompt is (add check for youtube url)
 - Implement documentation
 - give choice about the quality of the audio that is going to be downloaded
-- print out the size of the download for each audio quality
 - get rid of global variables 
 
 ## Late TODO
-- pytybe finds only 720 30-24fps, 360 30-24fps || 128, 48 abr
 - make gui
 - break down main.py in multiple files
