@@ -6,6 +6,16 @@ import os
 import ctypes
 from http.client import IncompleteRead
 
+
+# https://www.youtube.com/playlist?list=PL4xLP4LLBa-vTucuR1vN5zRfrZHnpivWU
+
+# Version 1.3
+# ask for audio abr in get_audio_stream
+# ask for video resolution
+# add more detailed prompt for Incomplete read exception
+
+# stream.filter().get_highest_resolution
+
 lock = threading.Lock()
 
 threads_num = 10
@@ -51,13 +61,11 @@ def get_playlist_urls(playlist_url):
             for url in playlist_urls:
                 urls.append(url)
 
-            time.sleep(0.5)
             print(f"\rPlaylist ... has been found\n")
 
     except SystemExit:
         searching = False
 
-        time.sleep(0.5)
         print("\rPlaylist not Found!")
         input("Press any key to exit ")
 
@@ -77,7 +85,25 @@ def get_youtube(url):
     return pytube.YouTube(url)
 
 
-def download_video(stream: pytube.Stream):
+def get_audio_stream(youtube: pytube.YouTube) -> pytube.Stream:
+    """ Currently only gets best audio available """
+    try:
+        return youtube.streams.filter(file_extension='mp4', progressive=False, type='audio').order_by('abr').last()
+    except IncompleteRead as e:
+        print(e)
+
+
+def get_video_stream(youtube: pytube.YouTube) -> pytube.Stream:
+    """  Currently only gets best video available """
+    try:
+        return youtube.streams.filter(file_extension='mp4', progressive=False, type='video').order_by('resolution').last()
+    except IncompleteRead as e:
+        print(e)
+
+
+def download_audio(stream: pytube.Stream):
+    """ Currently only downloads the .mp4 and renames it to mp3 file """
+
     try:
         # download the file
         out_file = stream.download(output_path=os.getcwd())
@@ -95,7 +121,24 @@ def download_video(stream: pytube.Stream):
 
     except Exception as e:
         print(e)
-        download_video(stream)
+        download_audio(stream)
+
+
+def download_video(stream: pytube.Stream):
+    """ Currently only downloads the .mp4 file """
+    try:
+        # currently only downloads the .mp4 file
+        stream.download(output_path=os.getcwd())
+
+    except KeyboardInterrupt:
+        quit()
+
+    except FileExistsError as e:
+        print(e)
+
+    except Exception as e:
+        print(e)
+        download_audio(stream)
 
 
 def worker(urls: list, thread_id: int) -> None:
@@ -118,11 +161,31 @@ def worker2(youtubes: list, thread_id: int, files_size: list) -> None:
 
         # get the stream of audio with the best abr
         # takes mp4 audio with the best abr
-        stream = youtube.streams.filter(file_extension='mp4', progressive=False, type='audio').order_by('abr').last()  #(stream should be in a try like line 83)')
-        streams.append(stream)
+        audio_stream = get_audio_stream(youtube)
+        if audio_stream:
+            streams.append(audio_stream)
 
-        files_size.append(stream.filesize)
-        tprint(f'Found Stream || {stream.title} || {stream.abr} || {human_readable(stream.filesize)}')
+        files_size.append(audio_stream.filesize)
+        tprint(f'Found Stream || {audio_stream.title} || {audio_stream.abr} || {human_readable(audio_stream.filesize)}')
+
+        try:
+            check2[thread_id] += 1
+        except IndexError:
+            pass
+
+
+def worker3(youtubes: list, thread_id: int, files_size: list) -> None:
+    while check2[thread_id] < len(youtubes):
+        youtube: pytube.YouTube = youtubes[check2[thread_id]]
+
+        # get the stream of audio with the best abr
+        # takes mp4 audio with the best abr
+        video_stream = get_video_stream(youtube)
+        if video_stream:
+            streams.append(video_stream)
+
+        files_size.append(video_stream.filesize)
+        tprint(f'Found Stream || {video_stream.title} || {video_stream.resolution} || {human_readable(video_stream.filesize)}')
 
         try:
             check2[thread_id] += 1
@@ -134,24 +197,24 @@ def print_searching():
     global searching
 
     while searching:
+        time.sleep(0.5)
         if not searching:
             break
-        time.sleep(0.5)
         tprint("\rsearching", end='')
 
+        time.sleep(0.5)
         if not searching:
             break
-        time.sleep(0.5)
         tprint("\rsearching.", end='')
 
+        time.sleep(0.5)
         if not searching:
             break
-        time.sleep(0.5)
         tprint("\rsearching..", end='')
 
+        time.sleep(0.5)
         if not searching:
             break
-        time.sleep(0.5)
         tprint("\rsearching...", end='')
 
 
@@ -183,12 +246,16 @@ def main():
         for i in range(threads_num):
             sliced_urls: list = urls[int(len(urls) / threads_num * i): int(
                 len(urls) / threads_num * (i + 1))]
+
             t: Thread = threading.Thread(target=worker, args=(sliced_urls, i))
             threads.append(t)
             t.start()
 
         for t in threads:
             t.join()
+
+        # ASK TO DOWNLOAD VIDEO OR AUDIO
+        choice = input(f"Do you want to download the audio or the video of the playlist (v/a)? ").lower()
 
         threads2 = []
         check2 = [0 for _ in range(threads_num)]
@@ -198,18 +265,19 @@ def main():
         for i in range(threads_num):
             sliced_youtubes: list = youtubes[int(len(youtubes) / threads_num * i): int(
                 len(youtubes) / threads_num * (i + 1))]
-            t2: Thread = threading.Thread(target=worker2, args=(sliced_youtubes, i, files_size))
+
+            if choice == "v" or choice == "":
+                t2: Thread = threading.Thread(target=worker3, args=(sliced_youtubes, i, files_size))
+            else:
+                t2: Thread = threading.Thread(target=worker2, args=(sliced_youtubes, i, files_size))
+
             threads2.append(t2)
             t2.start()
 
         for t2 in threads2:
             t2.join()
         endTime1 = time.perf_counter()
-        tprint(f'It took {endTime1 - startTime1}s to find {sum(check2)} songs')
-
-        time.sleep(0.5)
-        tprint('Task Completed')
-        tprint('Created all Threads\n')
+        tprint(f'It took {endTime1 - startTime1:.2f}s to find {sum(check2)} songs')
 
         # proceed
         set_title("Youtube Playlist Downloader || Proceeding")
@@ -229,7 +297,10 @@ def main():
                 except IncompleteRead:
                     print(f'Something went wrong while trying to find song number {i + 1}')
 
-                download_video(stream)
+                if choice == "v" or choice == "":
+                    download_video(stream)
+                else:
+                    download_audio(stream)
 
             endTime = time.perf_counter()
 
@@ -243,10 +314,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# https://www.youtube.com/playlist?list=PL4xLP4LLBa-vTucuR1vN5zRfrZHnpivWU
-
-# MAKE OPTIONS
-#  ask to download video or audio
-
-# line 121 stream needs except
