@@ -10,6 +10,12 @@ This project was initially made to practice multithreading. You can borrow all t
 - Downloads the best quality of audio automatically
 - Prints out the size of the download before proceeding
 
+## Version 1.2
+- fixed searching bug
+- asks to download video or audio
+- downloads the mp4 video with the best resolution
+- get_audio_stream/get_video_stream Incomplete read exception created
+
 # TODO 
 - ask to download video or audio
 - starts anyway no matter what the prompt is (add check for youtube url)
