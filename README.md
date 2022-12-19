@@ -17,10 +17,9 @@ This project was initially made to practice multithreading. You can borrow all t
 - get_audio_stream/get_video_stream Incomplete read exception created
 
 # TODO 
-- ask to download video or audio
-- starts anyway no matter what the prompt is (add check for youtube url)
 - Implement documentation
 - give choice about the quality of the audio that is going to be downloaded
+- give choice about the quality of the video that is going to be downloaded
 - get rid of global variables 
 
 ## Late TODO
