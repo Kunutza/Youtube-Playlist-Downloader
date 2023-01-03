@@ -14,23 +14,6 @@ from pytube import itags
 # https://www.youtube.com/playlist?list=PL4xLP4LLBa-vTucuR1vN5zRfrZHnpivWU
 # https://github.com/pytube/pytube/blob/master/pytube/itags.py
 
-# Version 1.3
-# make it that if choice is different that v/a/enter it just says invalid input and ends the program
-# make a list of lists with all the streams_list and then figure out what streams_list to download
-# find available audio formats
-# find available video formats
-# find available video resolutions
-# find available audio abrs
-# algorith to find all the wanted information (song number, stream number, abr, res, abr/res total count, abr/res count)
-# find number of found streams
-# ask for audio format
-# ask for video format
-# ask for audio abr ()
-# ask for video resolution
-
-# find(make list) available audios abrs for the file_format asked
-# find(make list) available videos resolutions for the file_format asked
-
 # Version 1.4
 # print alternatives for download if not all res/abr are there (make and ask for alternative before this step)
 # print size of that alternative
