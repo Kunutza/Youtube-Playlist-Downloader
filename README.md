@@ -16,10 +16,22 @@ This project was initially made to practice multithreading. You can borrow all t
 - downloads the mp4 video with the best resolution
 - get_audio_stream/get_video_stream Incomplete read exception created
 
+## Version 1.3
+- find available audio formats
+- find available video formats
+- find available video resolutions
+- find available audio abrs
+- algorith to find all the wanted information (song number, stream number, abr, res, abr/res total count, abr/res count)
+- find number of found streams
+- ask for audio format
+- ask for video format
+- ask for audio abr ()
+- ask for video resolution
+- find(make list) available audios abrs for the file_format asked
+- find(make list) available videos resolutions for the file_format asked
+
 # TODO 
 - Implement documentation
-- give choice about the quality of the audio that is going to be downloaded
-- give choice about the quality of the video that is going to be downloaded
 - get rid of global variables 
 
 ## Late TODO
