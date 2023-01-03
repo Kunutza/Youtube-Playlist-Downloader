@@ -5,6 +5,8 @@ Feel free to suggest changes in the code.
 
 This project was initially made to practice multithreading. You can borrow all the code you want
 
+If you want to use the script to download some songs I recommend you only download the audio. Downloading video or video with sound is a work in progress.
+
 ## Version 1.1
 - Finds video streams using multithread
 - Downloads the best quality of audio automatically
