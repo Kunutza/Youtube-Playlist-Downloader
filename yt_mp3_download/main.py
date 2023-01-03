@@ -1,3 +1,5 @@
+import itertools
+from itertools import repeat
 import time
 import threading
 from threading import Thread
@@ -5,16 +7,53 @@ import pytube
 import os
 import ctypes
 from http.client import IncompleteRead
+from pytube import itags
 
+# for incomplete read https://github.com/pytube/pytube/issues/1266 (dongyouhong's post)
 
 # https://www.youtube.com/playlist?list=PL4xLP4LLBa-vTucuR1vN5zRfrZHnpivWU
+# https://github.com/pytube/pytube/blob/master/pytube/itags.py
 
 # Version 1.3
-# ask for audio abr in get_audio_stream
+# make it that if choice is different that v/a/enter it just says invalid input and ends the program
+# make a list of lists with all the streams_list and then figure out what streams_list to download
+# find available audio formats
+# find available video formats
+# find available video resolutions
+# find available audio abrs
+# algorith to find all the wanted information (song number, stream number, abr, res, abr/res total count, abr/res count)
+# find number of found streams
+# ask for audio format
+# ask for video format
+# ask for audio abr ()
 # ask for video resolution
+
+# find(make list) available audios abrs for the file_format asked
+# find(make list) available videos resolutions for the file_format asked
+
+# Version 1.4
+# print alternatives for download if not all res/abr are there (make and ask for alternative before this step)
+# print size of that alternative
+# fix how the code looks
+
+# if there is not enough videos or audios that satisfy one spesific res/abr then fill the gap
+#  find the number of stream that is not included and try to find it in the closest values
+
+# http.client.RemoteDisconnected: Remote end closed connection without response (while trying to find stream)
+# number of videos/audio is not right (files_size fixes it)
+
 # add more detailed prompt for Incomplete read exception
 
-# stream.filter().get_highest_resolution
+# Version 1.5
+# make it so that when you download video it also downloads the audio
+# ask for and find audio abr the same way it only asks for just audio
+# fix the get_audio_stream and get_video_stream functions
+# make it take only mp4 and webm
+
+# add get higher/lower resolution option
+# add get higher/lower abr option
+
+# after all this fix the set_title for each phase of the program
 
 lock = threading.Lock()
 
@@ -23,7 +62,7 @@ threads_num = 10
 searching = True
 
 
-def human_readable(num, suffix="B"):
+def human_readable(num, suffix="B") -> str:
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
         if abs(num) < 1024.0:
             return f"{num:3.1f}{unit}{suffix}"
@@ -47,7 +86,7 @@ def set_title(message) -> None:
     ctypes.windll.kernel32.SetConsoleTitleW(message)
 
 
-def get_playlist_urls(playlist_url):
+def get_playlist_urls(playlist_url) -> list:
     global searching
     urls = []
 
@@ -81,34 +120,36 @@ def get_playlist_urls(playlist_url):
     return urls
 
 
-def get_youtube(url):
+def get_youtube(url) -> pytube.YouTube:
     return pytube.YouTube(url)
 
 
 def get_audio_stream(youtube: pytube.YouTube) -> pytube.Stream:
-    """ Currently only gets best audio available """
+    """ Currently only gets the best audio available """
+    # stream.filter().get_highest_resolution
     try:
-        return youtube.streams.filter(file_extension='mp4', progressive=False, type='audio').order_by('abr').last()
+        return youtube.streams.filter(progressive=False, type='audio').order_by('abr')
     except IncompleteRead as e:
         print(e)
 
 
 def get_video_stream(youtube: pytube.YouTube) -> pytube.Stream:
-    """  Currently only gets best video available """
+    """  Currently only gets the best video available """
+    # stream.filter().get_highest_resolution
     try:
-        return youtube.streams.filter(file_extension='mp4', progressive=False, type='video').order_by('resolution').last()
+        return youtube.streams.filter(progressive=False, type='video').order_by('resolution')
     except IncompleteRead as e:
         print(e)
 
 
-def download_audio(stream: pytube.Stream):
+def download_audio(stream: pytube.Stream) -> None:
     """ Currently only downloads the .mp4 and renames it to mp3 file """
 
     try:
         # download the file
         out_file = stream.download(output_path=os.getcwd())
 
-        # save the file in correct format
+        # save the file in correct file_format
         base, ext = os.path.splitext(out_file)
         new_file = base + '.mp3'
         try:
@@ -124,7 +165,7 @@ def download_audio(stream: pytube.Stream):
         download_audio(stream)
 
 
-def download_video(stream: pytube.Stream):
+def download_video(stream: pytube.Stream) -> None:
     """ Currently only downloads the .mp4 file """
     try:
         # currently only downloads the .mp4 file
@@ -138,10 +179,10 @@ def download_video(stream: pytube.Stream):
 
     except Exception as e:
         print(e)
-        download_audio(stream)
+        download_video(stream)
 
 
-def worker(urls: list, thread_id: int) -> None:
+def make_youtubes_list(urls: list, thread_id: int) -> None:
     while check[thread_id] < len(urls):
         url: str = urls[check[thread_id]]
 
@@ -155,18 +196,17 @@ def worker(urls: list, thread_id: int) -> None:
             pass
 
 
-def worker2(youtubes: list, thread_id: int, files_size: list) -> None:
+def make_audio_streams_list(youtubes: list, thread_id: int) -> None:
     while check2[thread_id] < len(youtubes):
         youtube: pytube.YouTube = youtubes[check2[thread_id]]
 
         # get the stream of audio with the best abr
         # takes mp4 audio with the best abr
         audio_stream = get_audio_stream(youtube)
-        if audio_stream:
-            streams.append(audio_stream)
 
-        files_size.append(audio_stream.filesize)
-        tprint(f'Found Stream || {audio_stream.title} || {audio_stream.abr} || {human_readable(audio_stream.filesize)}')
+        if audio_stream:
+            streams_list.append(audio_stream)
+            tprint(f"Found Streams for audio {youtube.title}")
 
         try:
             check2[thread_id] += 1
@@ -174,18 +214,17 @@ def worker2(youtubes: list, thread_id: int, files_size: list) -> None:
             pass
 
 
-def worker3(youtubes: list, thread_id: int, files_size: list) -> None:
+def make_video_streams_list(youtubes: list, thread_id: int) -> None:
     while check2[thread_id] < len(youtubes):
         youtube: pytube.YouTube = youtubes[check2[thread_id]]
 
         # get the stream of audio with the best abr
         # takes mp4 audio with the best abr
         video_stream = get_video_stream(youtube)
-        if video_stream:
-            streams.append(video_stream)
 
-        files_size.append(video_stream.filesize)
-        tprint(f'Found Stream || {video_stream.title} || {video_stream.resolution} || {human_readable(video_stream.filesize)}')
+        if video_stream:
+            streams_list.append(video_stream)
+            tprint(f"Found Streams for video {youtube.title}")
 
         try:
             check2[thread_id] += 1
@@ -193,7 +232,7 @@ def worker3(youtubes: list, thread_id: int, files_size: list) -> None:
             pass
 
 
-def print_searching():
+def print_searching() -> None:
     global searching
 
     while searching:
@@ -218,12 +257,25 @@ def print_searching():
         tprint("\rsearching...", end='')
 
 
+def choose(prompt: str, *choices: str):
+    """ Choices should be in lower case """
+    inp = input(prompt).lower()
+    while inp not in choices:
+        if inp == "":
+            return choices[0]
+
+
+        inp = input(f"Invalid input \"{inp}\". Please insert {choices}: ").lower()
+
+    return inp
+
+
 def main():
     set_title("Youtube Playlist Downloader")
 
     global youtubes
     global check
-    global streams
+    global streams_list
     global check2
 
     playlist_url = input("Insert playlist url: ")
@@ -247,29 +299,28 @@ def main():
             sliced_urls: list = urls[int(len(urls) / threads_num * i): int(
                 len(urls) / threads_num * (i + 1))]
 
-            t: Thread = threading.Thread(target=worker, args=(sliced_urls, i))
+            t: Thread = threading.Thread(target=make_youtubes_list, args=(sliced_urls, i))
             threads.append(t)
             t.start()
 
         for t in threads:
             t.join()
 
-        # ASK TO DOWNLOAD VIDEO OR AUDIO
-        choice = input(f"Do you want to download the audio or the video of the playlist (v/a)? ").lower()
+        # ask to download video or audio
+        choice = choose("Do you want to download the audio or the video of the playlist (v/a)? ", "v", "a")
 
         threads2 = []
         check2 = [0 for _ in range(threads_num)]
-        streams = []
-        files_size = []
+        streams_list = []
         startTime1 = time.perf_counter()
         for i in range(threads_num):
             sliced_youtubes: list = youtubes[int(len(youtubes) / threads_num * i): int(
                 len(youtubes) / threads_num * (i + 1))]
 
             if choice == "v" or choice == "":
-                t2: Thread = threading.Thread(target=worker3, args=(sliced_youtubes, i, files_size))
+                t2: Thread = threading.Thread(target=make_video_streams_list, args=(sliced_youtubes, i))
             else:
-                t2: Thread = threading.Thread(target=worker2, args=(sliced_youtubes, i, files_size))
+                t2: Thread = threading.Thread(target=make_audio_streams_list, args=(sliced_youtubes, i))
 
             threads2.append(t2)
             t2.start()
@@ -277,21 +328,116 @@ def main():
         for t2 in threads2:
             t2.join()
         endTime1 = time.perf_counter()
-        tprint(f'It took {endTime1 - startTime1:.2f}s to find {sum(check2)} songs')
+        tprint(f'It took {endTime1 - startTime1:.2f}s to search for {sum(check2)} songs')
+
+        # GET FORMAT,RES,ABR/ FORMAT,ABR ACCORDING TO LIST THE RESULTS
+        streams = [[] for _ in repeat(None, sum(check))]
+        stream_num = 0
+        # 3gpp is always progressive, mp4 is sometimes, webm is never
+        if choice == "v" or choice == "":
+            for i, _streams in enumerate(streams_list):
+                for j, stream in enumerate(_streams):
+                    print(stream)
+                    print(stream.subtype, stream.resolution, stream.is_progressive)
+                    if not stream.is_progressive:
+                        streams[i].append((stream.subtype, int(stream.resolution[:-1]), i, j))
+        else:
+            for i, _streams in enumerate(streams_list):
+                for j, stream in enumerate(_streams):
+                    print(stream)
+                    print(stream.subtype, stream.abr, stream.is_progressive)
+                    if not stream.is_progressive:
+                        streams[i].append((stream.subtype, int(stream.abr[:-4]), i, j))
+        print(streams)
+
+        occurrences = {
+            "mp4": {},
+            "webm": {},
+        }
+
+        for stream in streams:
+            for item in stream:
+                if occurrences[item[0]].get(item[1]):
+                    occurrences[item[0]][item[1]].append((item[2], item[3]))
+                else:
+                    occurrences[item[0]][item[1]] = [(item[2], item[3])]
+        print(occurrences)
+
+        streams_total_count = {
+            "mp4": dict.fromkeys(occurrences["mp4"].keys(), 0),
+            "webm": dict.fromkeys(occurrences["webm"].keys(), 0)
+        }
+        for file_ext, values in occurrences.items():
+            for value, cords in values.items():
+                streams_total_count[file_ext][value] = len(cords)
+        print(streams_total_count)
+
+        streams_count = {
+            "mp4": dict.fromkeys(occurrences["mp4"].keys(), 0),
+            "webm": dict.fromkeys(occurrences["webm"].keys(), 0)
+        }
+        for file_ext, values in occurrences.items():
+            for value, cords in values.items():
+                count = 1
+                current = cords[0][0]
+                for cord in cords:
+                    if cord[0] > current:
+                        current = cord[0]
+                        count += 1
+                streams_count[file_ext][value] = count
+        print(streams_count)
+
+        print(f"Number of songs found: {sum(check) - streams.count([])}")
+        print(len(streams))
+        print(streams.count([]))
+
+        for file_ext in occurrences.keys():
+            print(f"{file_ext}")
+            for value in occurrences[file_ext].keys():
+                print(f"    {str(value):4s} total streams: {str(streams_total_count[file_ext][value]):4s}, found streams for {str(streams_count[file_ext][value]):4s}/{str(sum(check)):4s} videos")
+
+        print("If all streams can not be downloaded using only one option alternatives are going to be suggested.")
+        file_format = choose("What type of file do you want to download (m/w)? ", "m", "w")
+        if file_format == "m" or file_format == "":
+            if choice == "v" or choice == "":
+                quality = choose("Insert a resolution: ", *(str(k) for k in occurrences["mp4"].keys()))
+            else:
+                quality = choose("Insert an abr: ", *(str(k) for k in occurrences["mp4"].keys()))
+
+            # {'mp4': {144: [(0, 1), (0, 3), (1, 1), (1, 3), (2, 1), (3, 1), (3, 3), (4, 1), (4, 3), (5, 1), (6, 1) ...
+            downloads = occurrences["mp4"][int(quality)]
+        else:
+            if choice == "v" or choice == "":
+                quality = choose("Insert a resolution: ", *(str(k) for k in occurrences["webm"].keys()))
+            else:
+                quality = choose("Insert an abr: ", *(str(k) for k in occurrences["webm"].keys()))
+
+            downloads = occurrences["webm"][int(quality)]
+
+        # for i in range(len(downloads) - 1, 0, -1):
+        #     if downloads[i][0] == downloads[i - 1][0]:
+        #         downloads.pop(i)
+        downloads = [cords for i, cords in enumerate(downloads) if i == 0 or cords[0] != downloads[i - 1][0]]
+        print(downloads)
+
+        files_size = [streams_list[tup[0]][tup[1]].filesize for tup in downloads]
 
         # proceed
         set_title("Youtube Playlist Downloader || Proceeding")
         tprint(f"Number of songs that are going to be downloaded: {len(files_size)}/{sum(check)}")
         tprint(f"Size of the download: {human_readable(sum(files_size))}")
 
-        proceed = input("Are you sure you want to download the songs (y/n)? ").lower()
-        tprint()
+        proceed = choose("Are you sure you want to download the songs (y/n)? ", "y", "n")
+        print()
 
         if proceed == "y" or proceed == "":
             startTime = time.perf_counter()
 
-            for i, stream in enumerate(streams):
-                set_title(f"Youtube Playlist Downloader || Downloaded ({i}/{sum(check2)})")
+            for i, cords in enumerate(downloads):
+                set_title(f"Youtube Playlist Downloader || Downloading ({i + 1}/{len(files_size)})")
+
+                stream = streams_list[cords[0]][cords[1]]
+
                 try:
                     tprint(f"Downloading || {stream.title}")
                 except IncompleteRead:
@@ -305,7 +451,7 @@ def main():
             endTime = time.perf_counter()
 
             tprint("\nDone!")
-            tprint(f"It took {(endTime - startTime):.2f}s to download all {sum(check)} songs!")
+            tprint(f"It took {(endTime - startTime):.2f}s to download all {len(files_size)} songs!")
 
         set_title("Youtube Playlist Downloader")
 
