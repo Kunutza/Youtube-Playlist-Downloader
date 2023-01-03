@@ -19,18 +19,16 @@ If you want to use the script to download some songs I recommend you only downlo
 - get_audio_stream/get_video_stream Incomplete read exception created
 
 ## Version 1.3
-- find available audio formats
-- find available video formats
-- find available video resolutions
-- find available audio abrs
-- algorith to find all the wanted information (song number, stream number, abr, res, abr/res total count, abr/res count)
-- find number of found streams
-- ask for audio format
-- ask for video format
-- ask for audio abr ()
-- ask for video resolution
-- find(make list) available audios abrs for the file_format asked
-- find(make list) available videos resolutions for the file_format asked
+- finds available video resolutions for mp4/webm
+- finds available audio abrs mp4/webm
+- finds all the wanted information (song number, stream number, abr, res, abr/res total count, abr/res count)
+- finds number of found streams
+- asks for what audio format is going to be downloaded
+- asks for video format is going to be downloaded
+- asks for what audio abr to download
+- asks for what video resolution to download
+- find(make list) available audios abrs for the file_format and abr asked
+- find(make list) available videos resolutions for the file_format and resolution asked
 
 # TODO 
 - Implement documentation
