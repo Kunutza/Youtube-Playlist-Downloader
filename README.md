@@ -30,6 +30,12 @@ If you want to use the script to download some songs I recommend you only downlo
 - find(make list) available audios abrs for the file_format and abr asked
 - find(make list) available videos resolutions for the file_format and resolution asked
 
+## Version 1.4
+- prompt that if some res/abr are not enough alternatives will be suggested
+- print alternatives for download if not all res/abr are there (make and ask for alternative before this step)
+- for start give 2 alternatives (fill with the highest/lowest/none res/abr possible)
+- added some documentation so the code is less confusing to read
+
 # TODO 
 - Implement documentation
 - get rid of global variables 
